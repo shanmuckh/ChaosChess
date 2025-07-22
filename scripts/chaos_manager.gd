@@ -8,7 +8,9 @@ var chaos_events = [
 	"change_piece_type",
 	"random_teleport",
 	"traitor_piece",
-	"suicide"
+	"suicide",
+	"clone_random_piece",
+	"place_random_piece"
 ]
 
 func trigger_chaos(board) -> void:
@@ -47,6 +49,10 @@ func trigger_chaos_delayed(board) -> void:
 			message = traitor_piece(board)
 		"suicide":
 			message = suicide(board)
+		"clone_random_piece":
+			message = clone_random_piece(board)
+		"place_random_piece":
+			message = place_random_piece(board)
 
 	if causes_check_or_checkmate(board):
 		restore_board(board, original_board)
@@ -172,6 +178,60 @@ func swap_two_random_pieces(board) -> String:
 	a.move_animation(pos_b)
 	b.move_animation(pos_a)
 	return "Swapped two pieces!"
+
+
+func clone_random_piece(board) -> String:
+	var pieces := []
+	for row in board:
+		for piece in row:
+			if piece and piece.piece_id != Piece.KING:
+				pieces.append(piece)
+	if pieces.is_empty():
+		return "No piece to clone."
+
+	var empty_tiles := []
+	for y in range(8):
+		for x in range(8):
+			if not board[y][x]:
+				empty_tiles.append(Vector2i(x, y))
+	if empty_tiles.is_empty():
+		return "No empty space to clone."
+
+	var piece_to_clone = pieces[randi() % pieces.size()]
+	var new_pos = empty_tiles[randi() % empty_tiles.size()]
+
+	var new_piece = piece_to_clone.duplicate()
+	new_piece.pos = new_pos
+	board[new_pos.y][new_pos.x] = new_piece
+	get_node("/root/Main/Pieces").add_child(new_piece)
+	new_piece.move_animation(new_pos)
+
+	return "A piece was cloned!"
+
+
+func place_random_piece(board) -> String:
+	var empty_tiles := []
+	for y in range(8):
+		for x in range(8):
+			if not board[y][x]:
+				empty_tiles.append(Vector2i(x, y))
+	if empty_tiles.is_empty():
+		return "No empty space to place a piece."
+
+	var new_pos = empty_tiles[randi() % empty_tiles.size()]
+	var new_piece_id = randi() % 5
+	var new_team = "white" if randf() > 0.5 else "black"
+
+	var new_piece = preload("res://scenes/chess_peice.tscn").instantiate()
+	new_piece.piece_id = new_piece_id
+	new_piece.team = new_team
+	new_piece.pos = new_pos
+
+	board[new_pos.y][new_pos.x] = new_piece
+	get_node("/root/Main/Pieces").add_child(new_piece)
+	new_piece.move_animation(new_pos)
+
+	return "A new piece appeared!"
 
 
 # --- Utility ---

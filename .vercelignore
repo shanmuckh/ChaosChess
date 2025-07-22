@@ -1,0 +1,7 @@
+/addons
+/assets
+/scenes
+/scripts
+*.import
+project.godot
+README.md
